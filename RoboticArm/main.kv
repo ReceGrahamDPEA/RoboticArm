@@ -58,18 +58,6 @@
             on_press: root.toggleMagnet()
             on_release: root.resetColors()
 
-        DPEAButton:
-            id: test
-            color: 0.180, 0.188, 0.980, 1
-            text: "test stuff"
-            center_x: root.width * 0.10
-            y: root.height * 0.35
-            background_color: 0, 0, 0, 0
-            background_normal: ''
-            size_hint: None,None
-            size: 300,100
-            on_release: root.resetColors()
-
 	##################
 	##### SLIDERS ####
     ##################
@@ -102,7 +90,7 @@
 
         Label:
             id: armControlLabel
-            text: 'Arm Position: ' + str(root.armPosition)
+            text: 'Arm Position: ' + str(int(moveArm.value * .0078125))
             font_size: 40
             center_x: root.width * 0.22
             y: root.height * 0.15

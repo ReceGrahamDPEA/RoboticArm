@@ -50,11 +50,10 @@ ARM_SLEEP = 2.5
 DEBOUNCE = 0.10
 
 Magnet_On = 1
-Magnet_Off = 0
+Magnet_Off = .5
 
-lowerTowerPosition = 60
-upperTowerPosition = 76
-
+lowerTowerPosition = 7300
+upperTowerPosition = 9495
 
 # ////////////////////////////////////////////////////////////////
 # //            DECLARE APP CLASS AND SCREENMANAGER             //
@@ -139,7 +138,35 @@ class MainScreen(Screen):
             self.magnet_state -= 1
         
     def auto(self):
-        print("Run the arm automatically here")
+
+        if self.ball_lower == 1:
+
+            self.auto_ball(lowerTowerPosition, upperTowerPosition)
+
+        if self.ball_upper == 1:
+
+            self.auto_ball(upperTowerPosition, lowerTowerPosition)
+
+    def auto_ball(self, tower1, tower2):
+
+        arm.goTo(tower1)
+        arm.wait_move_finish()
+        sleep(.5)
+        cyprus.set_pwm_values(1, period_value=100000, compare_value=100000, compare_mode=cyprus.LESS_THAN_OR_EQUAL)
+        sleep(.5)
+        cyprus.set_servo_position(2, Magnet_On)
+        sleep(.5)
+        cyprus.set_pwm_values(1, period_value=100000, compare_value=0, compare_mode=cyprus.LESS_THAN_OR_EQUAL)
+        sleep(2)
+
+        arm.goTo(tower2)
+        sleep(3)
+        cyprus.set_pwm_values(1, period_value=100000, compare_value=100000, compare_mode=cyprus.LESS_THAN_OR_EQUAL)
+        sleep(.5)
+        cyprus.set_servo_position(2, Magnet_Off)
+        sleep(.5)
+        cyprus.set_pwm_values(1, period_value=100000, compare_value=0, compare_mode=cyprus.LESS_THAN_OR_EQUAL)
+        print("Done!")
 
     def setArmPosition(self):
 
@@ -148,6 +175,7 @@ class MainScreen(Screen):
             arm.goTo(int(self.ids.moveArm.value))
 
         else:
+            print(self.ids.moveArm.value)
             arm.goHome()
 
     def homeArm(self):
@@ -180,6 +208,8 @@ class MainScreen(Screen):
         cyprus.set_pwm_values(1, period_value=100000, compare_value=0, compare_mode=cyprus.LESS_THAN_OR_EQUAL)
         cyprus.set_servo_position(2, Magnet_Off)
         arm.start_relative_move(-2)
+        arm.wait_move_finish()
+        arm.set_as_home()
         print("Home arm and turn off magnet")
 
     def resetColors(self):
@@ -196,7 +226,6 @@ class MainScreen(Screen):
         cyprus.close()
         GPIO.cleanup()
         print("Exit")
-        MyApp().stop()
         MyApp().stop()
     
 sm.add_widget(MainScreen(name = 'main'))
