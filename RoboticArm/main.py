@@ -49,6 +49,9 @@ COUNTERCLOCKWISE = 1
 ARM_SLEEP = 2.5
 DEBOUNCE = 0.10
 
+Magnet_On = 1
+Magnet_Off = 0
+
 lowerTowerPosition = 60
 upperTowerPosition = 76
 
@@ -75,6 +78,7 @@ cyprus.open_spi()
 sm = ScreenManager()
 arm = stepper(port=0, micro_steps=32, hold_current=20, run_current=20, accel_current=20, deaccel_current=20,
              steps_per_unit=200, speed=1)
+cyprus.setup_servo(2)
 
 # ////////////////////////////////////////////////////////////////
 # //                       MAIN FUNCTIONS                       //
@@ -85,10 +89,18 @@ class MainScreen(Screen):
     version = cyprus.read_firmware_version()
     armPosition = 0
     lastClick = time.clock()
+    arm_state = 0
+    magnet_state = 0
+
+    ball_lower = 2
+    ball_upper = 2
+
 
     def __init__(self, **kwargs):
         super(MainScreen, self).__init__(**kwargs)
         self.initialize()
+
+        Clock.schedule_interval(self.whereIsTheBall, 1)
 
     def debounce(self):
         processInput = False
@@ -99,27 +111,75 @@ class MainScreen(Screen):
         return processInput
 
     def toggleArm(self):
-        print("Process arm movement here")
+
+        if self.arm_state == 0:
+
+            cyprus.set_pwm_values(1, period_value=100000, compare_value=100000, compare_mode=cyprus.LESS_THAN_OR_EQUAL)
+            print("arm going down?")
+            self.arm_state += 1
+
+        else:
+
+            cyprus.set_pwm_values(1, period_value=100000, compare_value=0, compare_mode=cyprus.LESS_THAN_OR_EQUAL)
+            print("arm going up?")
+            self.arm_state -= 1
 
     def toggleMagnet(self):
-        print("Process magnet here")
+
+        if self.magnet_state == 0:
+
+            cyprus.set_servo_position(2, Magnet_On)
+            print("Magnet On")
+            self.magnet_state += 1
+
+        else:
+
+            cyprus.set_servo_position(2, Magnet_Off)
+            print("Magnet Off")
+            self.magnet_state -= 1
         
     def auto(self):
         print("Run the arm automatically here")
 
-    def setArmPosition(self, position):
-        print("Move arm here")
+    def setArmPosition(self):
+
+        if not self.ids.moveArm.value == 0:
+            print(self.ids.moveArm.value)
+            arm.goTo(int(self.ids.moveArm.value))
+
+        else:
+            arm.goHome()
 
     def homeArm(self):
+
         arm.home(self.homeDirection)
         
-    def isBallOnTallTower(self):
-        print("Determine if ball is on the top tower")
+    def whereIsTheBall(self, dt):
 
-    def isBallOnShortTower(self):
-        print("Determine if ball is on the bottom tower")
+        """Creating variables with only one clock function. This should take less processing power than running
+        a million clocks"""
+
+        if cyprus.read_gpio() & 0b0010:  # binary bitwise AND of the value returned from read.gpio()
+            self.ball_lower = 0
+            print("lower_state " + str(self.ball_lower))
+
+        else:
+            self.ball_lower = 1
+            print("lower_state " + str(self.ball_lower))
+
+        if cyprus.read_gpio() & 0b0001:
+            self.ball_upper = 0
+            print("upper_state " + str(self.ball_upper))
+
+        else:
+            self.ball_upper = 1
+            print("upper_state " + str(self.ball_upper))
         
     def initialize(self):
+
+        cyprus.set_pwm_values(1, period_value=100000, compare_value=0, compare_mode=cyprus.LESS_THAN_OR_EQUAL)
+        cyprus.set_servo_position(2, Magnet_Off)
+        arm.start_relative_move(-2)
         print("Home arm and turn off magnet")
 
     def resetColors(self):
@@ -128,6 +188,15 @@ class MainScreen(Screen):
         self.ids.auto.color = BLUE
 
     def quit(self):
+
+        arm.free_all()
+        sleep(.5)
+        cyprus.set_pwm_values(1, period_value=100000, compare_value=0, compare_mode=cyprus.LESS_THAN_OR_EQUAL)
+        cyprus.set_servo_position(2, Magnet_Off)
+        cyprus.close()
+        GPIO.cleanup()
+        print("Exit")
+        MyApp().stop()
         MyApp().stop()
     
 sm.add_widget(MainScreen(name = 'main'))
