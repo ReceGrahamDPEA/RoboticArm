@@ -42,18 +42,18 @@ UP = False
 DOWN = True
 ON = True
 OFF = False
-YELLOW = .180, 0.188, 0.980, 1
-BLUE = 0.917, 0.796, 0.380, 1
-CLOCKWISE = 0
-COUNTERCLOCKWISE = 1
-ARM_SLEEP = 2.5
-DEBOUNCE = 0.10
+YELLOW = .180, 0.188, 0.980, 1 #Used for kivy colors
+BLUE = 0.917, 0.796, 0.380, 1 #Used for kivy colors
+CLOCKWISE = 0 #Don't think this does anything, but don't want to delete it without testing
+COUNTERCLOCKWISE = 1 #Don't think this does anything, but don't want to delete it without testing
+ARM_SLEEP = 2.5 #Don't think this does anything, but could be used in the auto in the place of 3 seconds.
+DEBOUNCE = 0.10 #Don't think this does anything either
 
-Magnet_On = 1
-Magnet_Off = .5
+Magnet_On = 1 #Sets the magnet to on when used. Makes the magnet easier to use
+Magnet_Off = .5 #Sets the magnet to off when used. Makes the magnet easier to use
 
-lowerTowerPosition = 7300
-upperTowerPosition = 9495
+lowerTowerPosition = 7300 #position of the lower tower
+upperTowerPosition = 9495 #position of the upper tower
 
 # ////////////////////////////////////////////////////////////////
 # //            DECLARE APP CLASS AND SCREENMANAGER             //
@@ -111,6 +111,8 @@ class MainScreen(Screen):
 
     def toggleArm(self):
 
+        """Toggles the arm going up or down whether "arm_state" is 0 or 1"""
+
         if self.arm_state == 0:
 
             cyprus.set_pwm_values(1, period_value=100000, compare_value=100000, compare_mode=cyprus.LESS_THAN_OR_EQUAL)
@@ -124,6 +126,8 @@ class MainScreen(Screen):
             self.arm_state -= 1
 
     def toggleMagnet(self):
+
+        """Toggles the magnet based on whether "magnet_state" is 1 or 0"""
 
         if self.magnet_state == 0:
 
@@ -139,6 +143,9 @@ class MainScreen(Screen):
         
     def auto(self):
 
+        """Calls the auto ball function and controls which tower the ball goes to depending on the information the
+        sensors are getting. """
+
         if self.ball_lower == 1:
 
             self.auto_ball(lowerTowerPosition, upperTowerPosition)
@@ -148,6 +155,9 @@ class MainScreen(Screen):
             self.auto_ball(upperTowerPosition, lowerTowerPosition)
 
     def auto_ball(self, tower1, tower2):
+
+        """The big function. Automatically sends the arm to get the ball and will go to whichever tower the ball is
+        on. This function is dependent on the above function "auto" to fill in the values for "tower1" tower2" """
 
         arm.goTo(tower1)
         arm.wait_move_finish()
@@ -170,6 +180,9 @@ class MainScreen(Screen):
 
     def setArmPosition(self):
 
+        """Interacts with the slider and updates the position of the arm. Also prints the value of the moveArm slider
+        from the Kivy file """
+
         if not self.ids.moveArm.value == 0:
             print(self.ids.moveArm.value)
             arm.goTo(int(self.ids.moveArm.value))
@@ -179,6 +192,8 @@ class MainScreen(Screen):
             arm.goHome()
 
     def homeArm(self):
+
+        """I'm not sure if ths actually does anything, but it's supposed to home the arm."""
 
         arm.home(self.homeDirection)
         
@@ -205,6 +220,8 @@ class MainScreen(Screen):
         
     def initialize(self):
 
+        """Function that is run when the program is initialized. Is called by init of the MainScreen class"""
+
         cyprus.set_pwm_values(1, period_value=100000, compare_value=0, compare_mode=cyprus.LESS_THAN_OR_EQUAL)
         cyprus.set_servo_position(2, Magnet_Off)
         arm.start_relative_move(-2)
@@ -213,11 +230,18 @@ class MainScreen(Screen):
         print("Home arm and turn off magnet")
 
     def resetColors(self):
+
+        """Functionality for kivy, sets different color for different widgets. Variables can be found near the top of
+        this file """
+
         self.ids.armControl.color = YELLOW
         self.ids.magnetControl.color = YELLOW
         self.ids.auto.color = BLUE
 
     def quit(self):
+
+        """Quit function. This should set everything to "default" (That being with the arm up, the magnet off,
+        and arm itself freed """
 
         arm.free_all()
         sleep(.5)
